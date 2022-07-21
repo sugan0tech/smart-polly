@@ -1,4 +1,5 @@
 from cgitb import text
+from xmlrpc.client import Boolean
 from gtts import gTTS
 from dotenv import load_dotenv
 import os
@@ -15,17 +16,27 @@ def update_json(text, name) :
         json.dump(data, f, indent=4)
         f.truncate()     
 
+def check_json(text) -> bool:
+    with open('data.json', 'r') as f:
+        data = json.load(f)
+        if text in data:
+            return True
+        return False
+
 def play(name):
     os.system(f"mpg123 {name}.mp3")
 
 def save_to_bunny(name, text):
-    session = ftplib.FTP(os.getenv("URL"),os.getenv("USERNAME"),os.getenv("PASSWORD"))
-    audio = open(f"{name}.mp3",'rb')                  
-    #sends the file
-    session.storbinary(f"STOR {name}.mp3", audio)     
-    audio.close()                                    
-    session.quit()
-    update_json(text, name)
+    if not check_json(text) :
+        session = ftplib.FTP(os.getenv("URL"),os.getenv("USERNAME"),os.getenv("PASSWORD"))
+        audio = open(f"{name}.mp3",'rb')                  
+        #sends the file
+        session.storbinary(f"STOR {name}.mp3", audio)     
+        audio.close()                                    
+        session.quit()
+        update_json(text, name)
+    else :
+        print("Already On BunnyCDN")
 
 
 load_dotenv()
@@ -54,6 +65,7 @@ if __name__ == "__main__":
     #Saving alone
     elif(option == 3):
         save_to_bunny(name, text_val)
+
     else:
         print("Invalid Input")
 
