@@ -1,11 +1,23 @@
 import os
 import hashlib
+import boto3
 from google.cloud import texttospeech
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./key.json"
 
 
 print("Welcome to the NeoTTS ;)")
+
+
+def upload_to_s3(name: str) -> None:
+
+    s3 = boto3.client("s3")
+
+    s3.upload_file(
+        Filename=f"./{name}.mp3",
+        Bucket="testvini",
+        Key=f"{name}.mp3",
+    )
 
 
 def get_name(text: str, pitch: int = 0, rate: int = 1, lang: str = 'en-US') -> str:
@@ -63,3 +75,7 @@ if __name__ == "__main__":
         # Write the response to the output file.
         out.write(response.audio_content)
         print(f'Audio content written to file "{name}.mp3"')
+
+    upload_to_s3(name)
+
+    os.remove(f"{name}.mp3")
