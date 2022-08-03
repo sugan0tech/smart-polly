@@ -1,51 +1,36 @@
-import google.cloud.texttospeech as tts
+import os
+import uuid
+from google.cloud import texttospeech
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./key.json"
 
+text = str(input())
+name = str(uuid.uuid4())
 
-def unique_languages_from_voices(voices):
-    language_set = set()
-    for voice in voices:
-        for language_code in voice.language_codes:
-            language_set.add(language_code)
-    return language_set
+# Instantiates a client
+client = texttospeech.TextToSpeechClient()
 
+# Set the text input to be synthesized
+synthesis_input = texttospeech.SynthesisInput(text=text)
 
-def list_languages():
-    client = tts.TextToSpeechClient()
-    response = client.list_voices()
-    languages = unique_languages_from_voices(response.voices)
+# Build the voice request, select the language code ("en-US") and the ssml
+# voice gender ("neutral")
+voice = texttospeech.VoiceSelectionParams(
+    language_code='en-US',
+    ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL)
 
-    print(f" Languages: {len(languages)} ".center(60, "-"))
-    for i, language in enumerate(sorted(languages)):
-        print(f"{language:>10}", end="\n" if i % 5 == 4 else "")
+# Select the type of audio file you want returned
+audio_config = texttospeech.AudioConfig(
+    pitch=0,
+    speaking_rate=1,
+    audio_encoding=texttospeech.AudioEncoding.MP3)
 
-def list_voices(language_code=None):
-    client = tts.TextToSpeechClient()
-    response = client.list_voices(language_code=language_code)
-    voices = sorted(response.voices, key=lambda voice: voice.name)
+# Perform the text-to-speech request on the text input with the selected
+# voice parameters and audio file type
+response = client.synthesize_speech(
+    input=synthesis_input, voice=voice, audio_config=audio_config)
 
-    print(f" Voices: {len(voices)} ".center(60, "-"))
-    for voice in voices:
-        languages = ", ".join(voice.language_codes)
-        name = voice.name
-        gender = tts.SsmlVoiceGender(voice.ssml_gender).name
-        rate = voice.natural_sample_rate_hertz
-        print(f"{languages:<8} | {name:<24} | {gender:<8} | {rate:,} Hz")
- 
-
-def text_to_wav(voice_name: str, text: str):
-    language_code = "-".join(voice_name.split("-")[:2])
-    text_input = tts.SynthesisInput(text=text)
-    voice_params = tts.VoiceSelectionParams(
-        language_code=language_code, name=voice_name
-    )
-    audio_config = tts.AudioConfig(audio_encoding=tts.AudioEncoding.LINEAR16)
-
-    client = tts.TextToSpeechClient()
-    response = client.synthesize_speech(
-        input=text_input, voice=voice_params, audio_config=audio_config
-    )
-
-    filename = f"{language_code}.wav"
-    with open(filename, "wb") as out:
-        out.write(response.audio_content)
-        print(f'Generated speech saved to "{filename}"')
+# The response's audio_content is binary.
+with open(f'{name}.mp3', 'wb') as out:
+    # Write the response to the output file.
+    out.write(response.audio_content)
+    print(f'Audio content written to file "{name}.mp3"')
