@@ -34,7 +34,8 @@ def run_speech(synthesis_input: texttospeech.SynthesisInput, pitch: int = 0, spe
 
     voice = texttospeech.VoiceSelectionParams(
         language_code='en-US',
-        ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL)
+        ssml_gender=ssml_gender)
+
     audio_config = texttospeech.AudioConfig(
         pitch=pitch,
         speaking_rate=speaking_rate,
@@ -48,31 +49,49 @@ def run_speech(synthesis_input: texttospeech.SynthesisInput, pitch: int = 0, spe
 
 
 if __name__ == "__main__":
-    print("Welcome to the NeoTTS ;)")
-    client = texttospeech.TextToSpeechClient()
-    text_val = str(input("Enter the text :"))
-    synthesis_input = texttospeech.SynthesisInput(text=text_val)
-    print("Options:\n",
-          "1.Make with default configuration\n",
-          "2.Or Custom configuration\n")
-    option = int(input("Enter the option :"))
+    try:
+        print("Welcome to the NeoTTS ;)")
+        client = texttospeech.TextToSpeechClient()
+        text_val = str(input("Enter the text :"))
+        synthesis_input = texttospeech.SynthesisInput(text=text_val)
+        print("Options:\n",
+              "1.Make with default configuration\n",
+              "2.Or Custom configuration\n")
+        option = int(input("Enter the option :"))
 
-    if(option == 1):
-        response = run_speech(synthesis_input)
-        name = get_name(text_val)
+        if(option == 1):
+            response = run_speech(synthesis_input)
+            name = get_name(text_val)
 
-    elif(option == 2):
-        language_code = str(input("Language :"))
-        pitch = int(input("Pitch range -20 to 20 :"))
-        speaking_rate = float(input("Speed range(.25 - 4.00) :"))
+        elif(option == 2):
 
-        response = run_speech(synthesis_input,
-                              language_code=language_code,
-                              pitch=pitch,
-                              speaking_rate=speaking_rate)
-        name = get_name(text_val,
-                        pitch=pitch,
-                        rate=speaking_rate,
-                        lang=language_code)
+            language_code = str(input("Language :"))
+            pitch = int(input("Pitch range -20 to 20 :"))
+            speaking_rate = float(input("Speed range(.25 - 4.00) :"))
+            gender = str(input("Enter the gender M ,F or N"))
 
-    upload_to_s3(name, response)
+            if(gender == "M"):
+                ssml_gender = texttospeech.SsmlVoiceGender.MALE
+            elif(gender == "F"):
+                ssml_gender = texttospeech.SsmlVoiceGender.FEMALE
+            elif(gender == "N"):
+                ssml_gender = texttospeech.SsmlVoiceGender.NEUTRAL
+            else:
+                raise Exception("Invalid gender")
+
+            response = run_speech(synthesis_input,
+                                  language_code=language_code,
+                                  pitch=pitch,
+                                  speaking_rate=speaking_rate,
+                                  ssml_gender=ssml_gender)
+            name = get_name(text_val,
+                            pitch=pitch,
+                            rate=speaking_rate,
+                            lang=language_code)
+        else:
+            raise Exception("Invalid Option")
+        upload_to_s3(name, response)
+    except Exception as e:
+        print(e)
+    finally:
+        print("process exited")
