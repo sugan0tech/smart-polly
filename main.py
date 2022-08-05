@@ -6,10 +6,12 @@ from google.cloud import texttospeech
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./key.json"
 
 
-print("Welcome to the NeoTTS ;)")
+def upload_to_s3(name: str, response: texttospeech.SynthesizeSpeechResponse) -> None:
 
-
-def upload_to_s3(name: str) -> None:
+    with open(f'{name}.mp3', 'wb') as out:
+        # Write the response to the output file.
+        out.write(response.audio_content)
+        print(f'Audio content written to file "{name}.mp3"')
 
     s3 = boto3.client("s3")
 
@@ -19,6 +21,8 @@ def upload_to_s3(name: str) -> None:
         Key=f"{name}.mp3",
     )
 
+    os.remove(f"{name}.mp3")
+
 
 def get_name(text: str, pitch: int = 0, rate: int = 1, lang: str = 'en-US') -> str:
     name = hashlib.md5(text.encode()).hexdigest()[:4] + \
@@ -26,7 +30,7 @@ def get_name(text: str, pitch: int = 0, rate: int = 1, lang: str = 'en-US') -> s
     return name
 
 
-def run_speech(synthesis_input, pitch=0, speaking_rate=1, language_code='en-US', ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL):
+def run_speech(synthesis_input: texttospeech.SynthesisInput, pitch: int = 0, speaking_rate: float = 1, language_code: str = 'en-US', ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL) -> texttospeech.SynthesizeSpeechResponse:
 
     voice = texttospeech.VoiceSelectionParams(
         language_code='en-US',
@@ -44,8 +48,8 @@ def run_speech(synthesis_input, pitch=0, speaking_rate=1, language_code='en-US',
 
 
 if __name__ == "__main__":
+    print("Welcome to the NeoTTS ;)")
     client = texttospeech.TextToSpeechClient()
-
     text_val = str(input("Enter the text :"))
     synthesis_input = texttospeech.SynthesisInput(text=text_val)
     print("Options:\n",
@@ -71,11 +75,4 @@ if __name__ == "__main__":
                         rate=speaking_rate,
                         lang=language_code)
 
-    with open(f'{name}.mp3', 'wb') as out:
-        # Write the response to the output file.
-        out.write(response.audio_content)
-        print(f'Audio content written to file "{name}.mp3"')
-
-    upload_to_s3(name)
-
-    os.remove(f"{name}.mp3")
+    upload_to_s3(name, response)
