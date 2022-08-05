@@ -24,6 +24,7 @@ def upload_to_s3(name: str, response: texttospeech.SynthesizeSpeechResponse) -> 
     os.remove(f"{name}.mp3")
 
 
+# Creating unique name based of hash + key parameters
 def get_name(text: str, pitch: int = 0, rate: int = 1, lang: str = 'en-US') -> str:
     name = hashlib.md5(text.encode()).hexdigest()[:4] + \
         f":p{pitch}:" + f"r{rate}:" + f"lang{lang}"
@@ -33,7 +34,7 @@ def get_name(text: str, pitch: int = 0, rate: int = 1, lang: str = 'en-US') -> s
 def run_speech(synthesis_input: texttospeech.SynthesisInput, pitch: int = 0, speaking_rate: float = 1, language_code: str = 'en-US', ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL) -> texttospeech.SynthesizeSpeechResponse:
 
     voice = texttospeech.VoiceSelectionParams(
-        language_code='en-US',
+        language_code=language_code,
         ssml_gender=ssml_gender)
 
     audio_config = texttospeech.AudioConfig(
@@ -48,6 +49,7 @@ def run_speech(synthesis_input: texttospeech.SynthesisInput, pitch: int = 0, spe
     return response
 
 
+# functions can also be used as a external mod
 if __name__ == "__main__":
     try:
         print("Welcome to the NeoTTS ;)")
@@ -95,3 +97,4 @@ if __name__ == "__main__":
         print(e)
     finally:
         print("process exited")
+
