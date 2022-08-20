@@ -27,7 +27,7 @@ and Stores speect as MP3 files directly into AWS s3 bucket.
 
 Fist install [google-cloud](https://pypi.org/project/google-cloud/) and [AWS boto3](https://pypi.org/project/boto3/) python library
 ```bash
-pip install google-cloud boto3
+pip install google-cloud-texttospeech boto3
 ```
 
 Authenticate your google-cloud account 
