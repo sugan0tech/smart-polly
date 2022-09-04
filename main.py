@@ -6,6 +6,24 @@ from google.cloud import texttospeech
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./key.json"
 
 
+def unique_languages_from_voices(voices):
+    language_set = set()
+    for voice in voices:
+        for language_code in voice.language_codes:
+            language_set.add(language_code)
+    return language_set
+
+
+def list_languages():
+    client = texttospeech.TextToSpeechClient()
+    response = client.list_voices()
+    languages = unique_languages_from_voices(response.voices)
+
+    print(f" Languages: {len(languages)} ".center(60, "-"))
+    for i, language in enumerate(sorted(languages)):
+        print(f"{language:>10}", end="\n" if i % 5 == 4 else "")
+
+
 def upload_to_s3(name: str, response: texttospeech.SynthesizeSpeechResponse) -> None:
 
     with open(f'{name}.mp3', 'wb') as out:
@@ -21,7 +39,7 @@ def upload_to_s3(name: str, response: texttospeech.SynthesizeSpeechResponse) -> 
         Key=f"{name}.mp3",
     )
 
-    os.remove(f"{name}.mp3")
+    # os.remove(f"{name}.mp3")
 
 
 # Creating unique name based of hash + key parameters
@@ -53,30 +71,32 @@ def run_speech(synthesis_input: texttospeech.SynthesisInput, pitch: int = 0, spe
 if __name__ == "__main__":
     try:
         print("Welcome to the NeoTTS ;)")
+        print("List of languages")
+        list_languages()
         client = texttospeech.TextToSpeechClient()
-        text_val = str(input("Enter the text :"))
+        text_val = str(input("\nEnter the text :"))
         synthesis_input = texttospeech.SynthesisInput(text=text_val)
         print("Options:\n",
               "1.Make with default configuration\n",
               "2.Or Custom configuration\n")
         option = int(input("Enter the option :"))
 
-        if(option == 1):
+        if (option == 1):
             response = run_speech(synthesis_input)
             name = get_name(text_val)
 
-        elif(option == 2):
+        elif (option == 2):
 
             language_code = str(input("Language :"))
             pitch = int(input("Pitch range -20 to 20 :"))
             speaking_rate = float(input("Speed range(.25 - 4.00) :"))
             gender = str(input("Enter the gender M ,F or N"))
 
-            if(gender == "M"):
+            if (gender == "M"):
                 ssml_gender = texttospeech.SsmlVoiceGender.MALE
-            elif(gender == "F"):
+            elif (gender == "F"):
                 ssml_gender = texttospeech.SsmlVoiceGender.FEMALE
-            elif(gender == "N"):
+            elif (gender == "N"):
                 ssml_gender = texttospeech.SsmlVoiceGender.NEUTRAL
             else:
                 raise Exception("Invalid gender")
@@ -97,4 +117,3 @@ if __name__ == "__main__":
         print(e)
     finally:
         print("process exited")
-
